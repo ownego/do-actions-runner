@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -eEuo pipefail
 
+# Start Docker daemon in background (requires --privileged)
+dockerd &>/var/log/dockerd.log &
+for i in $(seq 1 30); do
+  if docker info &>/dev/null 2>&1; then
+    echo "Docker daemon ready"
+    break
+  fi
+  if [ "$i" = "30" ]; then
+    echo "Warning: Docker daemon failed to start (container may need --privileged flag)"
+    break
+  fi
+  sleep 1
+done
+
 if [ -z "${TOKEN:-}" ]
 then
   echo "TOKEN is required"
@@ -23,10 +37,10 @@ fi
 RUNNER_TOKEN=$(curl -s -X POST -H "authorization: token ${TOKEN}" "https://api.github.com/${API_PATH}/actions/runners/registration-token" | jq -r .token)
 
 cleanup() {
-  ./config.sh remove --token "${RUNNER_TOKEN}"
+  gosu actions ./config.sh remove --token "${RUNNER_TOKEN}"
 }
 
-./config.sh \
+gosu actions ./config.sh \
   --url "https://github.com/${CONFIG_PATH}" \
   --token "${RUNNER_TOKEN}" \
   --name "${NAME:-$(hostname)}" \
@@ -34,6 +48,6 @@ cleanup() {
 
 trap 'cleanup' SIGTERM
 
-./run.sh "$@" &
+gosu actions ./run.sh "$@" &
 
 wait $!

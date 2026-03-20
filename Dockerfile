@@ -16,13 +16,14 @@ RUN apt-get update \
     done \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Docker CLI
+# Install Docker and gosu (for privilege dropping)
 RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
         > /etc/apt/sources.list.d/docker.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends \
-        docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
+        docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin gosu \
+    && usermod -aG docker actions \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Git from PPA and build-essential
@@ -51,7 +52,6 @@ RUN curl -fsSL https://raw.githubusercontent.com/mklement0/n-install/stable/bin/
 
 WORKDIR /home/actions/actions-runner
 
-USER actions
 COPY --chown=actions:actions entrypoint.sh .
 RUN chmod u+x ./entrypoint.sh
 ENTRYPOINT ["./entrypoint.sh"]
