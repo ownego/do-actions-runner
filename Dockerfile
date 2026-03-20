@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 
 RUN useradd -m actions
 RUN apt-get -y update && apt-get install -y \
-    apt-transport-https ca-certificates curl jq software-properties-common \
+    apt-transport-https ca-certificates curl jq software-properties-common wget \
     && toolset="$(curl -sL https://raw.githubusercontent.com/actions/runner-images/refs/heads/main/images/ubuntu/toolsets/toolset-2404.json)" \
     && common_packages=$(echo $toolset | jq -r ".apt.common_packages[]") && cmd_packages=$(echo $toolset | jq -r ".apt.cmd_packages[]") \
     && for package in $common_packages $cmd_packages; do apt-get install -y --no-install-recommends $package; done
